@@ -1,8 +1,16 @@
 {
   "expo": {
-    "name": "Job Assistant App",
-    "slug": "job-assistant-app",
-    "platforms": ["ios", "android", "web"],
-    "entryPoint": "./.expo/router"
+    "name": "jobassistantapp",
+    "slug": "jobassistantapp",
+    "version": "1.0.0",
+    "scheme": "jobassistantapp", 
+    "android": {
+      "newArchEnabled": true,
+      "package": "com.yourname.jobassistantapp"
+    },
+    "ios": {
+      "newArchEnabled": true,
+      "bundleIdentifier": "com.yourname.jobassistantapp"
+    }
   }
 }

@@ -1,3 +1,4 @@
+// HomeScreenStyles.ts
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
@@ -54,9 +55,9 @@ export default StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     textAlignVertical: 'top',
-    borderWidth: 0, // Ensure no border
-    borderColor: 'transparent', // Make sure border is not visible
-    outlineStyle: 'none', //Need this biar bordernya yng putih2 ga keluar
+    borderWidth: 0,
+    borderColor: 'transparent',
+    outlineStyle: 'none', 
   },
   sendButton: {
     width: 40,
@@ -71,6 +72,16 @@ export default StyleSheet.create({
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 20,
+  },
+  pinButton: {
+    padding: 5,
+    marginRight: 5,
+    width: 50,
+    height: 50,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#40414f',
   },
   searchButton: {
     width: 60,
@@ -95,5 +106,16 @@ export default StyleSheet.create({
     height: 150,
     borderRadius: 8,
     resizeMode: 'cover',
+  },
+  fileNameText: {
+    color: '#ffffff',
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: 'left',
+  },
+  warningText: {
+    color: '#ff0000',
+    fontSize: 14,
+    marginVertical: 10,
   },
 });

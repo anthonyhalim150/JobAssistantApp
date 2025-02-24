@@ -1,5 +1,5 @@
 // JobCardStyles.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export default StyleSheet.create({
     cardContainer: {
@@ -8,16 +8,19 @@ export default StyleSheet.create({
         marginVertical: 5,
         borderRadius: 8,
         shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 5,
-        elevation: 2,
+        elevation: 3, // Increased elevation for better shadow visibility on Android
         flexDirection: 'row',
+        alignItems: 'center', // Ensures vertical alignment
     },
     logo: {
         width: 50,
         height: 50,
         borderRadius: 25,
         marginRight: 10,
+        resizeMode: 'contain', // Ensures the image fits correctly
     },
     placeholderLogo: {
         width: 50,
@@ -34,15 +37,18 @@ export default StyleSheet.create({
     },
     textContainer: {
         flex: 1,
+        justifyContent: 'center', // Center text vertically in Android
     },
     title: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
+        marginBottom: 2,
     },
     company: {
         fontSize: 14,
         color: '#666',
+        marginBottom: 2,
     },
     location: {
         fontSize: 12,
@@ -53,6 +59,7 @@ export default StyleSheet.create({
         fontSize: 12,
         color: '#555',
         marginBottom: 10,
+        flexShrink: 1, // Prevents text from being cut off
     },
     applyButton: {
         fontSize: 14,

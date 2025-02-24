@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "Job Assistant App",
+    "slug": "job-assistant-app",
+    "platforms": ["ios", "android", "web"],
+    "entryPoint": "./.expo/router"
+  }
+}

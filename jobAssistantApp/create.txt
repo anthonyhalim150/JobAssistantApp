@@ -1,0 +1,18 @@
+ShoppingAssistantApp/
+├─ app/                   # All screens and routes
+│   ├─ index.tsx          # Home screen (/)
+│   ├─ search.tsx         # Search results screen (/search)
+│   ├─ product/
+│   │    └─ [id].tsx      # Dynamic product detail screen (/product/:id)
+│   ├─ api/
+│   │    └─ search.ts      # API call to FastAPI backend
+├─ assets/                # Static assets (images, fonts, etc.)
+├─ components/            # Reusable components
+│   ├─ ImagePickerComponent.tsx
+│   ├─ ProductCard.tsx
+│   └─ SearchBar.tsx
+├─ constants/             # Configuration files
+│   ├─ ApiConfig.ts       # API URLs and keys
+│   └─ Styles.ts          # Global styles
+├─ App.tsx                # Main app entry point
+└─ package.json           # Project dependencies and scripts

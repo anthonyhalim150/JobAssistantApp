@@ -15,23 +15,25 @@ interface JobCardProps {
 const JobCard: React.FC<JobCardProps> = ({ title, company, location, description, applyLink, logo }) => {
     return (
         <View style={styles.cardContainer}>
-            {logo ? (
-                <Image source={{ uri: logo }} style={styles.logo} />
-            ) : (
-                <View style={styles.placeholderLogo}>
-                    <Text style={styles.placeholderText}>{company[0]}</Text>
-                </View>
-            )}
-            <View style={styles.textContainer}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.company}>{company}</Text>
-                <Text style={styles.location}>{location || 'Location not specified'}</Text>
-                <Text style={styles.description} numberOfLines={3}>{description}</Text>
-                <TouchableOpacity onPress={() => Linking.openURL(applyLink)}>
-                    <Text style={styles.applyButton}>Apply Now</Text>
-                </TouchableOpacity>
-            </View>
+    {logo ? (
+        <Image source={{ uri: logo }} style={styles.logo} />
+    ) : (
+        <View style={styles.placeholderLogo}>
+            <Text style={styles.placeholderText}>{company ? company[0] : '?'}</Text>
         </View>
+    )}
+    <View style={styles.textContainer}>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={styles.company} numberOfLines={1}>{company}</Text>
+        <Text style={styles.location} numberOfLines={1}>{location || 'Location not specified'}</Text>
+        <Text style={styles.description} numberOfLines={3}>{description}</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(applyLink)}>
+            <Text style={styles.applyButton}>Apply Now</Text>
+        </TouchableOpacity>
+    </View>
+</View>
+
+
     );
 };
 

@@ -8,21 +8,35 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default function HomeScreen() {
   const [chatInput, setChatInput] = useState<string>('');
-  const [chatMessages, setChatMessages] = useState<Array<{ type: 'user' | 'bot'; message: string; imageUri?: string; jobData?: any }>>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{ type: 'user' | 'bot'; message: string; jobData?: any }>>([]);
   const [showResumeUploader, setShowResumeUploader] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<{ name: string; uri: string; type: string } | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const handleResumeUpload = (fileName: string) => {
+      setChatMessages((prev) => [
+          ...prev,
+          { type: 'bot', message: `Resume "${fileName}" uploaded successfully.` }
+      ]);
+      setShowResumeUploader(false);
+  };
+
   const handleSend = async () => {
-    if (chatInput.trim()) {
-        setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
-        const userMessage = chatInput;
-        setChatInput('');
+      if (!chatInput.trim() && !selectedFile) return;
 
-        setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
+      if (selectedFile) {
+          handleResumeUpload(selectedFile.name);
+      }
 
-        try {
-            const aiResponse = await axios.post(
-                'https://api.cohere.com/v2/chat',
+      setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
+      const userMessage = chatInput;
+      setChatInput('');
+
+      setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
+
+      try {
+          const aiResponse = await axios.post(
+              'https://api.cohere.com/v2/chat',
               {
                   "model": "command-r",
                   "stream": false,
@@ -69,146 +83,148 @@ export default function HomeScreen() {
                       'Content-Type': 'application/json',
                   },
               }
-            );
+          );
 
-            console.log('AI Response:', aiResponse.data);
+          console.log('AI Response:', aiResponse.data);
 
-            const { query, employment_types, date_posted, work_from_home, job_requirements} = aiResponse.data.message.content[0].text
-            ? JSON.parse(aiResponse.data.message.content[0].text)
-            : {};
+          const { query, employment_types, date_posted, work_from_home, job_requirements } = aiResponse.data.message.content[0].text
+              ? JSON.parse(aiResponse.data.message.content[0].text)
+              : {};
 
-            const params: Record<string, any> = { num_pages: 1 };
-            console.log('params sent',params);
+          const params: Record<string, any> = { num_pages: 1 };
+          console.log('params sent', params);
 
-            if (query && query !== 'NULL') params.query = encodeURI(query);
-            if (employment_types && employment_types !== 'NULL') params.employment_types = employment_types;
-            if (date_posted && date_posted !== 'NULL') params.date_posted = date_posted;
-            if (work_from_home !== null && work_from_home !== 'NULL'  && work_from_home !== undefined) params.work_from_home = work_from_home;
+          if (query && query !== 'NULL') params.query = encodeURI(query);
+          if (employment_types && employment_types !== 'NULL') params.employment_types = employment_types;
+          if (date_posted && date_posted !== 'NULL') params.date_posted = date_posted;
+          if (work_from_home !== null && work_from_home !== 'NULL' && work_from_home !== undefined) params.work_from_home = work_from_home;
+          if (job_requirements && job_requirements !== 'NULL') params.job_requirements = job_requirements;
 
-            if (job_requirements && job_requirements !== 'NULL') {
-              params.job_requirements = job_requirements;
-            }
-            console.log('Final API Params:', params);
+          console.log('Final API Params:', params);
 
-            // Step 2: Use the summary to search for jobs
-            const response = await axios.get(
-                'https://jsearch.p.rapidapi.com/search',
-                {
-                    params,
-                    headers: {
-                        'x-rapidapi-host': 'jsearch.p.rapidapi.com',
-                        'x-rapidapi-key': 'd95b66b6a6mshf4186aaaff140cdp1fe228jsn849750b69437'
-                    }
-                }
-            );
+          const response = await axios.get(
+              'https://jsearch.p.rapidapi.com/search',
+              {
+                  params,
+                  headers: {
+                      'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+                      'x-rapidapi-key': 'd95b66b6a6mshf4186aaaff140cdp1fe228jsn849750b69437'
+                  }
+              }
+          );
 
-            const jobs = response.data?.data ?? [];
+          const jobs = response.data?.data ?? [];
 
-            if (jobs.length > 0) {
-                const jobCards = jobs.slice(0, 5).map((job: any, index: number) => ({
-                    type: 'bot',
-                    message: '',
-                    jobData: {
-                        title: job.job_title,
-                        company: job.employer_name,
-                        location: job.job_location,
-                        description: job.job_description,
-                        applyLink: job.job_apply_link,
-                        logo: job.employer_logo,
-                    }
-                }));
+          if (jobs.length > 0) {
+              const jobCards = jobs.slice(0, 5).map((job: any, index: number) => ({
+                  type: 'bot',
+                  message: '',
+                  jobData: {
+                      title: job.job_title,
+                      company: job.employer_name,
+                      location: job.job_location,
+                      description: job.job_description,
+                      applyLink: job.job_apply_link,
+                      logo: job.employer_logo,
+                  }
+              }));
 
-                setChatMessages((prev) => [
-                    ...prev.slice(0, -1),
-                    ...jobCards,
-                ]);
-            } else {
-                setChatMessages((prev) => [
-                    ...prev.slice(0, -1),
-                    { type: 'bot', message: 'No relevant jobs found. Try refining your search!' },
-                ]);
-            }
+              setChatMessages((prev) => [
+                  ...prev.slice(0, -1),
+                  ...jobCards,
+              ]);
+          } else {
+              setChatMessages((prev) => [
+                  ...prev.slice(0, -1),
+                  { type: 'bot', message: 'No relevant jobs found. Try refining your search!' },
+              ]);
+          }
 
-        } catch (error: unknown) {
-            const axiosError = error as AxiosError;
-            console.error('Error communicating with API:', axiosError.response?.data || axiosError.message);
-            setChatMessages((prev) => [
-                ...prev.slice(0, -1),
-                { type: 'bot', message: 'Error: Unable to connect to the job search API.' },
-            ]);
-        }
-    }
-};
-  const handleResumeUpload = (fileName: string) => {
-    setChatMessages((prev) => [
-        ...prev,
-        { type: 'bot', message: `Resume "${fileName}" uploaded successfully.` }
-    ]);
-    setShowResumeUploader(false);
+      } catch (error: unknown) {
+          const axiosError = error as AxiosError;
+          console.error('Error communicating with API:', axiosError.response?.data || axiosError.message);
+          setChatMessages((prev) => [
+              ...prev.slice(0, -1),
+              { type: 'bot', message: 'Error: Unable to connect to the job search API.' },
+          ]);
+      }
   };
 
-
-
-return (
-  <View style={styles.container}>
-    <ScrollView
-      style={styles.chatContainer}
-      ref={scrollViewRef}
-      onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-    >
-      {chatMessages.map((chat, index) => (
-        <View
-          key={index}
-          style={[
-            styles.chatBubble,
-            chat.type === 'user' ? styles.userBubble : styles.botBubble,
-          ]}
-        >
-          {chat.jobData ? (
-            <JobCard
-              title={chat.jobData.title}
-              company={chat.jobData.company}
-              location={chat.jobData.location}
-              description={chat.jobData.description}
-              applyLink={chat.jobData.applyLink}
-              logo={chat.jobData.logo}
-            />
-          ) : (
-            <Text style={styles.chatText}>{chat.message}</Text>
-          )}
-        </View>
-      ))}
-    </ScrollView>
-
-    {showResumeUploader && 
-        <ResumeUploader 
-            onUploadSuccess={handleResumeUpload} 
-            onClose={() => setShowResumeUploader(false)} 
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.chatContainer}
+        ref={scrollViewRef}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {chatMessages.map((chat, index) => (
+          <View
+            key={index}
+            style={[
+              styles.chatBubble,
+              chat.type === 'user' ? styles.userBubble : styles.botBubble,
+            ]}
+          >
+            {chat.jobData ? (
+              <JobCard
+                title={chat.jobData.title}
+                company={chat.jobData.company}
+                location={chat.jobData.location}
+                description={chat.jobData.description}
+                applyLink={chat.jobData.applyLink}
+                logo={chat.jobData.logo}
+              />
+            ) : (
+              <Text style={styles.chatText}>{chat.message}</Text>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+  
+      {showResumeUploader && (
+        <ResumeUploader
+          onUploadSuccess={(file) => {
+            setSelectedFile(file);
+            setShowResumeUploader(false);
+          }}
+          onClose={() => setShowResumeUploader(false)}
         />
-    }
+      )}
+  
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.chatInputContainer}
+      >
+        <TouchableOpacity style={styles.pinButton} onPress={() => setShowResumeUploader(true)}>
+          <Icon name="attach-file" size={24} color="#10a37f" />
+        </TouchableOpacity>
+  
+        {selectedFile && (
+    <View style={styles.fileContainer}>
+        <View style={styles.fileInfo}>
+            <Icon name="insert-drive-file" size={20} color="#1E90FF" style={styles.fileIcon} />
+            <Text style={styles.fileText}>{selectedFile.name}</Text>
+        </View>
+        <TouchableOpacity onPress={() => setSelectedFile(null)} style={styles.closeButton}>
+            <Icon name="cancel" size={24} color="#ff0000" />
+        </TouchableOpacity>
+    </View>
+)}
 
-
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.chatInputContainer}
-    >
-      <TouchableOpacity style={styles.pinButton} onPress={() => setShowResumeUploader(true)}>
-        <Icon name="attach-file" size={24} color="#10a37f" />
-      </TouchableOpacity>
-
-      <TextInput
-        style={styles.chatInput}
-        placeholder="Type a message..."
-        placeholderTextColor="#aaa"
-        value={chatInput}
-        onChangeText={setChatInput}
-        multiline={true}
-      />
-
-      <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-        <Text style={styles.sendButtonText}>➤</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
-  </View>
+  
+        <TextInput
+          style={styles.chatInput}
+          placeholder="Type a message..."
+          placeholderTextColor="#aaa"
+          value={chatInput}
+          onChangeText={setChatInput}
+          multiline={true}
+        />
+  
+        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+          <Text style={styles.sendButtonText}>➤</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </View>
   );
-}
+}  

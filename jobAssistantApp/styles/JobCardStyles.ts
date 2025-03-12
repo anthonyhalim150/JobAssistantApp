@@ -1,8 +1,11 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default StyleSheet.create({
     cardContainer: {
-        flexShrink: 1,
+        width: screenWidth * 0.9,
+        maxWidth: '100%', 
         backgroundColor: '#fff',
         padding: 10,
         marginVertical: 5,
@@ -40,34 +43,35 @@ export default StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         flexShrink: 1,
+        flexWrap: 'wrap',
     },
     title: {
-        fontSize: 16,
+        fontSize: screenWidth < 360 ? 14 : 16, 
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 2,
         flexShrink: 1,
     },
     company: {
-        fontSize: 14,
+        fontSize: screenWidth < 360 ? 12 : 14, 
         color: '#666',
         marginBottom: 2,
         flexShrink: 1,
     },
     location: {
-        fontSize: 12,
+        fontSize: screenWidth < 360 ? 10 : 12, 
         color: '#999',
         marginBottom: 5,
         flexShrink: 1,
     },
     description: {
-        fontSize: 12,
+        fontSize: screenWidth < 360 ? 10 : 12,
         color: '#555',
         marginBottom: 10,
         flexShrink: 1,
     },
     applyButton: {
-        fontSize: 14,
+        fontSize: screenWidth < 360 ? 12 : 14, 
         color: '#1E90FF',
         fontWeight: 'bold',
         flexShrink: 1,

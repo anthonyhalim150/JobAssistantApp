@@ -5,6 +5,8 @@ import axios, { AxiosError } from 'axios';
 import styles from '../styles/HomeScreenStyles';
 import JobCard from '../components/JobCard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import * as FileSystem from 'expo-file-system';
+
 
 export default function HomeScreen() {
   const [chatInput, setChatInput] = useState<string>('');
@@ -21,71 +23,106 @@ export default function HomeScreen() {
       setShowResumeUploader(false);
   };
 
-  const handleSend = async () => {
-      if (!chatInput.trim() && !selectedFile) return;
+  
 
-      if (selectedFile) {
-          handleResumeUpload(selectedFile.name);
-      }
+    const extractTextFromFile = async (fileUri: string, fileType: string) => {
+        try {
+            if (fileType === 'application/pdf') {
+                const base64File = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+                
+                const response = await fetch('https://your-backend.com/extract-pdf-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ file: base64File })
+                });
 
-      setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
-      const userMessage = chatInput;
-      setChatInput('');
+                const data = await response.json();
+                return data.text || 'Could not extract text from the document.';
+            } else {
+                const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+                return fileContent.slice(0, 5000);
+            }
+        } catch (error) {
+            console.error('Error reading file:', error);
+            return 'Could not extract text from the document.';
+        }
+    };
 
-      setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
+    const handleSend = async () => {
+        if (!chatInput.trim() && !selectedFile) return;
 
-      try {
-          const aiResponse = await axios.post(
-              'https://api.cohere.com/v2/chat',
-              {
-                  "model": "command-r",
-                  "stream": false,
-                  "messages": [
-                      {
-                          "role": "system",
-                          "content": `You are an AI assistant that extracts job search parameters for a job search API in the following format: 
-                          query, employment_types, date_posted, work_from_home, job_requirements. 
+        let extractedText = '';
+        if (selectedFile) {
+            extractedText = await extractTextFromFile(selectedFile.uri, selectedFile.type);
+            handleResumeUpload(selectedFile.name);
+        }
 
-                          Return 'NULL' if a parameter is not specified except 'query'. 
+        setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
+        const userMessage = chatInput;
+        setChatInput('');
 
-                          Parameter Specifications:
-                          - 'query': The job title or search term. Include job title and location as part of the query. e.g. Cybersecurity Indonesia. If not specified or cannot be extracted, return 'any'.
-                          - 'employment_types': One of ['FULLTIME', 'CONTRACTOR', 'PARTTIME', 'INTERN']. Return 'NULL' if not specified.
-                          - 'date_posted': One of ['all', 'today', '3days', 'week', 'month']. Return 'all' if not specified.
-                          - 'work_from_home': Boolean (true/false). Return false if not specified.
-                          - 'job_requirements': One of ['under_3_years_experience', 'more_than_3_years_experience', 'no_experience', 'no_degree']. Return 'NULL' if not specified.
+        setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
 
-                          Format the output as a JSON object with accurate data types. Do not give any comments.`
-                      },
-                      {
-                          "role": "user",
-                          "content": userMessage
-                      }
-                  ],
-                  "response_format": {
-                      "type": "json_object",
-                      "json_schema": {
-                          "type": "object",
-                          "properties": {
-                              "query": { "type": ["string", "null"] },
-                              "employment_types": { "type": ["string", "null"] },
-                              "date_posted": { "type": ["string", "null"] },
-                              "work_from_home": { "type": ["string", "null"] },
-                              "job_requirements": { "type": ["string", "null"] }
-                          },
-                          "required": ["query"]
-                      }
-                  }
-              },
-              {
-                  headers: { 
-                      'Authorization': `Bearer zsj4YqArScI9DstfAagiMA2MyomIqAd6BYp2Q0Kr`,
-                      'Content-Type': 'application/json',
-                  },
-              }
-          );
+        try {
+            const aiResponse = await axios.post(
+                'https://api.cohere.com/v2/chat',
+                {
+                    "model": "command-r",
+                    "stream": false,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": `You are an AI assistant that extracts job search parameters for a job search API in the following format: 
+                            query, employment_types, date_posted, work_from_home, job_requirements. 
 
-          console.log('AI Response:', aiResponse.data);
+                            Return 'NULL' if a parameter is not specified except 'query'. 
+
+                            Parameter Specifications:
+                            - 'query': The job title or search term. Include job title and location as part of the query. e.g. Cybersecurity Indonesia. If not specified or cannot be extracted, return 'any'.
+                            - 'employment_types': One of ['FULLTIME', 'CONTRACTOR', 'PARTTIME', 'INTERN']. Return 'NULL' if not specified.
+                            - 'date_posted': One of ['all', 'today', '3days', 'week', 'month']. Return 'all' if not specified.
+                            - 'work_from_home': Boolean (true/false). Return false if not specified.
+                            - 'job_requirements': One of ['under_3_years_experience', 'more_than_3_years_experience', 'no_experience', 'no_degree']. Return 'NULL' if not specified.
+
+                            The user has also uploaded a resume. Extract relevant details from it to enhance job search accuracy. The resume content is below:
+
+                            ${extractedText}
+
+                            Format the output as a JSON object with accurate data types. Do not give any comments.`
+                        },
+                        {
+                            "role": "user",
+                            "content": userMessage
+                        }
+                    ],
+                    "response_format": {
+                        "type": "json_object",
+                        "json_schema": {
+                            "type": "object",
+                            "properties": {
+                                "query": { "type": ["string", "null"] },
+                                "employment_types": { "type": ["string", "null"] },
+                                "date_posted": { "type": ["string", "null"] },
+                                "work_from_home": { "type": ["string", "null"] },
+                                "job_requirements": { "type": ["string", "null"] }
+                            },
+                            "required": ["query"]
+                        }
+                    }
+                },
+                {
+                    headers: { 
+                        'Authorization': `Bearer zsj4YqArScI9DstfAagiMA2MyomIqAd6BYp2Q0Kr`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            console.log('AI Response:', aiResponse.data);
+
+
 
           const { query, employment_types, date_posted, work_from_home, job_requirements } = aiResponse.data.message.content[0].text
               ? JSON.parse(aiResponse.data.message.content[0].text)
@@ -209,7 +246,7 @@ export default function HomeScreen() {
                   <Icon name="cancel" size={24} color="#ff0000" />
               </TouchableOpacity>
           </View>
-      )}
+       )}
 
   
         <TextInput

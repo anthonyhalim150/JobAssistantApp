@@ -7,6 +7,33 @@ export default StyleSheet.create({
     backgroundColor: '#343541',
     padding: 16,
   },
+  fileContainer: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8e8e8',
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#d1d1d1',
+  },
+  fileInfo: { 
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexShrink: 1, 
+  },
+  fileIcon: { 
+      marginRight: 8,
+  },
+  fileText: { 
+      fontSize: 14,
+      color: '#333',
+      flexShrink: 1, 
+  },
+  closeButton: { 
+      marginLeft: 'auto',
+      padding: 5,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',

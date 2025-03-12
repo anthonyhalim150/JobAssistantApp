@@ -200,16 +200,16 @@ export default function HomeScreen() {
         </TouchableOpacity>
   
         {selectedFile && (
-    <View style={styles.fileContainer}>
-        <View style={styles.fileInfo}>
-            <Icon name="insert-drive-file" size={20} color="#1E90FF" style={styles.fileIcon} />
-            <Text style={styles.fileText}>{selectedFile.name}</Text>
-        </View>
-        <TouchableOpacity onPress={() => setSelectedFile(null)} style={styles.closeButton}>
-            <Icon name="cancel" size={24} color="#ff0000" />
-        </TouchableOpacity>
-    </View>
-)}
+          <View style={styles.fileContainer}>
+              <View style={styles.fileInfo}>
+                  <Icon name="insert-drive-file" size={20} color="#1E90FF" style={styles.fileIcon} />
+                  <Text style={styles.fileText}>{selectedFile.name}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedFile(null)} style={styles.closeButton}>
+                  <Icon name="cancel" size={24} color="#ff0000" />
+              </TouchableOpacity>
+          </View>
+      )}
 
   
         <TextInput

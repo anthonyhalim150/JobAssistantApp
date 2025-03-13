@@ -63,134 +63,154 @@ export default function HomeScreen() {
       });
   };
   
-    const handleSend = async () => {
-        if (!chatInput.trim() && !selectedFile) return;
+  const handleSend = async () => {
+    if (!chatInput.trim() && !selectedFile) return;
 
-        let extractedText = '';
-        if (selectedFile) {
-            extractedText = await extractTextFromFile(selectedFile.uri, selectedFile.type);
-            handleResumeUpload(selectedFile.name);
-        }
-        console.log(extractedText);
+    let extractedText = '';
+    if (selectedFile) {
+        extractedText = await extractTextFromFile(selectedFile.uri, selectedFile.type);
+        handleResumeUpload(selectedFile.name);
+    }
+    console.log('Extracted Resume Text:', extractedText);
 
-        setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
-        const userMessage = chatInput || 'i';
-        setChatInput('');
+    setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
+    const userMessage = chatInput || 'i';
+    setChatInput('');
 
-        setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
+    setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);
 
-        try {
-            const aiResponse = await axios.post(
-                'https://api.cohere.com/v2/chat',
-                {
-                    "model": "command-r",
-                    "stream": false,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": `You are an AI assistant that extracts job search parameters for a job search API in the following format: 
-                            query, employment_types, date_posted, work_from_home, job_requirements. 
+    try {
+        const aiResponse = await axios.post(
+            'https://api.cohere.com/v2/chat',
+            {
+                "model": "command-r",
+                "stream": false,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": `You are an AI assistant that extracts job search parameters for a job search API in the following format: 
+                        query, employment_types, date_posted, work_from_home, job_requirements. 
 
-                            Return 'NULL' if a parameter is not specified except 'query'. 
+                        Return 'NULL' if a parameter is not specified except 'query'. 
 
-                            Parameter Specifications:
-                            - 'query': The job title or search term. Include job title and location as part of the query. e.g. Cybersecurity Indonesia. If not specified or cannot be extracted, return 'any'.
-                            - 'employment_types': One of ['FULLTIME', 'CONTRACTOR', 'PARTTIME', 'INTERN']. Return 'NULL' if not specified.
-                            - 'date_posted': One of ['all', 'today', '3days', 'week', 'month']. Return 'all' if not specified.
-                            - 'work_from_home': Boolean (true/false). Return false if not specified.
-                            - 'job_requirements': One of ['under_3_years_experience', 'more_than_3_years_experience', 'no_experience', 'no_degree']. Return 'NULL' if not specified.
+                        Parameter Specifications:
+                        - 'query': The job title or search term. Include job title and location as part of the query. If location is not specified, just return title, seperated by comma. e.g. Cybersecurity, Data. Otherwise, seperate by comma, e.g. Cybersecurity Indonesia, Big Data Poland. If not specified or cannot be extracted, return 'any'.
+                        - 'employment_types': One of ['FULLTIME', 'CONTRACTOR', 'PARTTIME', 'INTERN', 'NULL']. Return 'NULL' if not specified.
+                        - 'date_posted': One of ['all', 'today', '3days', 'week', 'month']. Return 'all' if not specified.
+                        - 'work_from_home': Boolean (true/false). Return false if not specified.
+                        - 'job_requirements': One of ['under_3_years_experience', 'more_than_3_years_experience', 'no_experience', 'no_degree', 'NULL']. Return 'NULL' if not specified.
 
-                            The user has also uploaded a resume. Extract relevant details from it to enhance job search accuracy. The resume content is below:
+                        The user has also uploaded a resume. Extract relevant details from it to enhance job search accuracy. The resume content is below:
 
-                            ${extractedText}
+                        ${extractedText}
 
-                            Format the output as a JSON object with accurate data types. Do not give any comments.`
+                        Format the output as a JSON object with accurate data types. Do not give any comments.`
+                    },
+                    {
+                        "role": "user",
+                        "content": userMessage
+                    }
+                ],
+                "response_format": {
+                    "type": "json_object",
+                    "json_schema": {
+                        "type": "object",
+                        "properties": {
+                            "query": { "type": ["string", "null"] },
+                            "employment_types": { "type": ["string", "null"] },
+                            "date_posted": { "type": ["string", "null"] },
+                            "work_from_home": { "type": ["string", "null"] },
+                            "job_requirements": { "type": ["string", "null"] }
                         },
-                        {
-                            "role": "user",
-                            "content": userMessage
-                        }
-                    ],
-                    "response_format": {
-                        "type": "json_object",
-                        "json_schema": {
-                            "type": "object",
-                            "properties": {
-                                "query": { "type": ["string", "null"] },
-                                "employment_types": { "type": ["string", "null"] },
-                                "date_posted": { "type": ["string", "null"] },
-                                "work_from_home": { "type": ["string", "null"] },
-                                "job_requirements": { "type": ["string", "null"] }
-                            },
-                            "required": ["query"]
+                        "required": ["query"]
+                    }
+                }
+            },
+            {
+                headers: { 
+                    'Authorization': `Bearer zsj4YqArScI9DstfAagiMA2MyomIqAd6BYp2Q0Kr`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log('AI Response:', aiResponse.data);
+
+        const { query, employment_types, date_posted, work_from_home, job_requirements } = aiResponse.data.message.content[0].text
+            ? JSON.parse(aiResponse.data.message.content[0].text)
+            : {};
+
+       
+        const queries = query.split(",").map((q: string) => q.trim()).filter((q: string) => q !== 'NULL' && q !== 'any');
+
+        if (queries.length === 0) {
+            setChatMessages((prev) => [
+                ...prev.slice(0, -1),
+                { type: 'bot', message: 'No valid job queries found. Try refining your search!' },
+            ]);
+            return;
+        }
+
+        let allJobs: any[] = [];
+        
+        for (const q of queries) {
+            console.log(`Searching jobs for: ${q}`);
+
+            const params: Record<string, any> = { num_pages: 1, query: encodeURI(q) };
+
+            if (employment_types && employment_types !== 'NULL') params.employment_types = employment_types;
+            if (date_posted && date_posted !== 'NULL') params.date_posted = date_posted;
+            if (work_from_home !== null && work_from_home !== 'NULL' && work_from_home !== undefined) params.work_from_home = work_from_home;
+            if (job_requirements && job_requirements !== 'NULL') params.job_requirements = job_requirements;
+
+            console.log('Final API Params:', params);
+
+            try {
+                const response = await axios.get(
+                    'https://jsearch.p.rapidapi.com/search',
+                    {
+                        params,
+                        headers: {
+                            'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+                            'x-rapidapi-key': 'd95b66b6a6mshf4186aaaff140cdp1fe228jsn849750b69437'
                         }
                     }
-                },
-                {
-                    headers: { 
-                        'Authorization': `Bearer zsj4YqArScI9DstfAagiMA2MyomIqAd6BYp2Q0Kr`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+                );
 
-            console.log('AI Response:', aiResponse.data);
+                const jobs = response.data?.data ?? [];
+                allJobs = [...allJobs, ...jobs]; 
+            } catch (error) {
+                console.error(`Error fetching jobs for ${q}:`, error);
+            }
+        }
 
+        console.log('Total Jobs Found:', allJobs.length);
 
-
-          const { query, employment_types, date_posted, work_from_home, job_requirements } = aiResponse.data.message.content[0].text
-              ? JSON.parse(aiResponse.data.message.content[0].text)
-              : {};
-
-          const params: Record<string, any> = { num_pages: 1 };
-          console.log('params sent', params);
-
-          if (query && query !== 'NULL') params.query = encodeURI(query);
-          if (employment_types && employment_types !== 'NULL') params.employment_types = employment_types;
-          if (date_posted && date_posted !== 'NULL') params.date_posted = date_posted;
-          if (work_from_home !== null && work_from_home !== 'NULL' && work_from_home !== undefined) params.work_from_home = work_from_home;
-          if (job_requirements && job_requirements !== 'NULL') params.job_requirements = job_requirements;
-
-          console.log('Final API Params:', params);
-
-          const response = await axios.get(
-              'https://jsearch.p.rapidapi.com/search',
-              {
-                  params,
-                  headers: {
-                      'x-rapidapi-host': 'jsearch.p.rapidapi.com',
-                      'x-rapidapi-key': 'd95b66b6a6mshf4186aaaff140cdp1fe228jsn849750b69437'
-                  }
+        if (allJobs.length > 0) {
+          const jobCards = allJobs.slice(0, 5).map((job: any) => ({
+              type: "bot" as "bot", 
+              message: '',
+              jobData: {
+                  title: job.job_title,
+                  company: job.employer_name,
+                  location: job.job_location,
+                  description: job.job_description,
+                  applyLink: job.job_apply_link,
+                  logo: job.employer_logo,
               }
-          );
-
-          const jobs = response.data?.data ?? [];
-
-          if (jobs.length > 0) {
-              const jobCards = jobs.slice(0, 5).map((job: any, index: number) => ({
-                  type: 'bot',
-                  message: '',
-                  jobData: {
-                      title: job.job_title,
-                      company: job.employer_name,
-                      location: job.job_location,
-                      description: job.job_description,
-                      applyLink: job.job_apply_link,
-                      logo: job.employer_logo,
-                  }
-              }));
-
-              setChatMessages((prev) => [
-                  ...prev.slice(0, -1),
-                  ...jobCards,
-              ]);
-          } else {
-              setChatMessages((prev) => [
-                  ...prev.slice(0, -1),
-                  { type: 'bot', message: 'No relevant jobs found. Try refining your search!' },
-              ]);
-          }
-
+          }));
+      
+          setChatMessages((prev) => [
+              ...prev.slice(0, -1),  
+              ...jobCards,  
+          ]);
+      } else {
+          setChatMessages((prev) => [
+              ...prev.slice(0, -1),
+              { type: "bot", message: "No relevant jobs found. Try refining your search!" },
+          ]);
+      }
+      
       } catch (error: unknown) {
           const axiosError = error as AxiosError;
           console.error('Error communicating with API:', axiosError.response?.data || axiosError.message);
@@ -200,6 +220,7 @@ export default function HomeScreen() {
           ]);
       }
   };
+
 
   return (
     <View style={styles.container}>
@@ -253,7 +274,7 @@ export default function HomeScreen() {
         {selectedFile && (
           <View style={styles.fileContainer}>
               <View style={styles.fileInfo}>
-                  <Icon name="insert-drive-file" size={20} color="#1E90FF" style={styles.fileIcon} />
+                  <Icon name="insert-drive-file" size={20} color="#1E90FF" />
                   <Text style={styles.fileText}>{selectedFile.name}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedFile(null)} style={styles.closeButton}>

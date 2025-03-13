@@ -1,5 +1,6 @@
-// HomeScreenStyles.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window'); // Get screen width
 
 export default StyleSheet.create({
   container: {
@@ -7,33 +8,42 @@ export default StyleSheet.create({
     backgroundColor: '#343541',
     padding: 16,
   },
-  fileContainer: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8e8e8',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: '#d1d1d1',
-  },
-  fileInfo: { 
+
+    fileContainer: {
       flexDirection: 'row',
-      alignItems: 'center',
-      flexShrink: 1, 
-  },
-  fileIcon: { 
-      marginRight: 8,
-  },
-  fileText: { 
-      fontSize: 14,
+      alignItems: 'flex-start',   // Ensures text can grow downward
+      backgroundColor: '#e8e8e8',
+      paddingHorizontal: 2,       // Tight horizontal padding
+      paddingVertical: 1,         // Tight vertical padding
+      borderRadius: 4,            // Small border radius
+      borderWidth: 0.5,
+      borderColor: '#ccc',
+      marginVertical: 2,          // Minimal spacing above/below
+      flexWrap: 'wrap',           // Allows text to wrap
+      maxWidth: width * 0.2,      // Force wrapping after ~30% screen width
+    },
+    fileInfo: {
+      flexDirection: 'row',
+      flexShrink: 1,
+      flexWrap: 'wrap',
+    },
+    fileText: {
+      fontSize: 13,
       color: '#333',
-      flexShrink: 1, 
-  },
-  closeButton: { 
-      marginLeft: 'auto',
-      padding: 5,
-  },
+      lineHeight: 13,  // Slightly bigger line height for readability
+      flexShrink: 1,
+      flexWrap: 'wrap',
+      maxWidth: '100%', 
+    },
+    closeButton: {
+      marginLeft: 4,
+      padding: 2,
+    },
+
+  
+
+
+ 
   title: {
     fontSize: 24,
     fontWeight: 'bold',

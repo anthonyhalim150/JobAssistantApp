@@ -22,34 +22,47 @@ export default function HomeScreen() {
       ]);
       setShowResumeUploader(false);
   };
+  const extractTextFromFile = async (fileUri: string, fileType: string) => {
+    try {
+        let base64File;
 
-  
-
-    const extractTextFromFile = async (fileUri: string, fileType: string) => {
-        try {
-            if (fileType === 'application/pdf') {
-                const base64File = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
-                
-                const response = await fetch('https://your-backend.com/extract-pdf-text', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ file: base64File })
-                });
-
-                const data = await response.json();
-                return data.text || 'Could not extract text from the document.';
-            } else {
-                const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
-                return fileContent.slice(0, 5000);
-            }
-        } catch (error) {
-            console.error('Error reading file:', error);
-            return 'Could not extract text from the document.';
+        if (Platform.OS === 'web') {
+            const response = await fetch(fileUri);
+            const blob = await response.blob();
+            base64File = await convertBlobToBase64(blob);
+        } else {
+            base64File = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
         }
-    };
 
+        const response = await axios.post(
+            'http://localhost:8000/extract-pdf-text', 
+            { file: base64File }, 
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                withCredentials: false  
+            }
+        );
+
+        return response.data.text || 'Could not extract text from the document.';
+    } catch (error) {
+        console.error('Error reading file:', error);
+        return 'Could not extract text from the document.';
+    }
+};
+
+
+  const convertBlobToBase64 = (blob: Blob) => {
+      return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = () => resolve(reader.result?.toString().split(',')[1] || '');
+          reader.onerror = (error) => reject(error);
+      });
+  };
+  
     const handleSend = async () => {
         if (!chatInput.trim() && !selectedFile) return;
 
@@ -58,9 +71,10 @@ export default function HomeScreen() {
             extractedText = await extractTextFromFile(selectedFile.uri, selectedFile.type);
             handleResumeUpload(selectedFile.name);
         }
+        console.log(extractedText);
 
         setChatMessages([...chatMessages, { type: 'user', message: chatInput }]);
-        const userMessage = chatInput;
+        const userMessage = chatInput || 'i';
         setChatInput('');
 
         setChatMessages((prev) => [...prev, { type: 'bot', message: 'Analyzing your request...' }]);

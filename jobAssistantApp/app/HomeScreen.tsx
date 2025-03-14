@@ -128,7 +128,7 @@ export default function HomeScreen() {
             },
             {
                 headers: { 
-                    'Authorization': `Bearer zsj4YqArScI9DstfAagiMA2MyomIqAd6BYp2Q0Kr`,
+                    'Authorization': `Bearer ____`,
                     'Content-Type': 'application/json',
                 },
             }
@@ -172,7 +172,7 @@ export default function HomeScreen() {
                         params,
                         headers: {
                             'x-rapidapi-host': 'jsearch.p.rapidapi.com',
-                            'x-rapidapi-key': 'd95b66b6a6mshf4186aaaff140cdp1fe228jsn849750b69437'
+                            'x-rapidapi-key': '_____'
                         }
                     }
                 );
